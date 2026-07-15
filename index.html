@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weather Dashboard</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, sans-serif;
+  max-width: 480px;
+  margin: 40px auto;
+  padding: 0 20px;
+  background: linear-gradient(135deg, #74b9ff, #0984e3);
+  min-height: 100vh;
+}
+h1 { color: white; text-align: center; }
+.search-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 16px;
+}
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #0984e3;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+button:hover { background: #0767b1; }
+.locate-btn {
+  width: 100%;
+  margin-bottom: 20px;
+  background: #00b894;
+}
+.locate-btn:hover { background: #019874; }
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.city { font-size: 22px; font-weight: bold; margin: 0; }
+.temp { font-size: 56px; font-weight: bold; margin: 8px 0; color: #0984e3; }
+.condition { font-size: 18px; color: #555; text-transform: capitalize; }
+.details {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+.details div { font-size: 14px; color: #555; }
+.details strong { display: block; font-size: 16px; color: #222; }
+.error { color: white; text-align: center; }
+img.icon { width: 80px; }
+</style>
+</head>
+<body>
+
+<h1>Weather Dashboard</h1>
+
+<div class="search-box">
+  <input type="text" id="cityInput" placeholder="Enter city name">
+  <button onclick="searchCity()">Search</button>
+</div>
+<button class="locate-btn" onclick="useMyLocation()">Use My Location</button>
+
+<div id="result"></div>
+
+<script>
+const API_KEY = "3ea461e04a212d6b62fec8afe2faed54";
+
+function showError(msg) {
+  document.getElementById("result").innerHTML = `<p class="error">${msg}</p>`;
+}
+
+function renderWeather(data) {
+  const html = `
+    <div class="card">
+      <p class="city">${data.name}, ${data.sys.country}</p>
+      <img class="icon" src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="${data.weather[0].description}">
+      <div class="temp">${Math.round(data.main.temp)}°C</div>
+      <div class="condition">${data.weather[0].description}</div>
+      <div class="details">
+        <div><strong>${Math.round(data.main.feels_like)}°C</strong>Feels like</div>
+        <div><strong>${data.main.humidity}%</strong>Humidity</div>
+        <div><strong>${Math.round(data.wind.speed)} m/s</strong>Wind</div>
+      </div>
+    </div>
+  `;
+  document.getElementById("result").innerHTML = html;
+}
+
+async function fetchWeather(url) {
+  document.getElementById("result").innerHTML = "<p class='error'>Loading...</p>";
+  const response = await fetch(url);
+  if (!response.ok) {
+    showError("City not found or API error. Check your API key.");
+    return;
+  }
+  const data = await response.json();
+  renderWeather(data);
+}
+
+function searchCity() {
+  const city = document.getElementById("cityInput").value.trim();
+  if (!city) return;
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${API_KEY}`;
+  fetchWeather(url);
+}
+
+function useMyLocation() {
+  if (!navigator.geolocation) {
+    showError("Geolocation not supported by your browser.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&units=metric&appid=${API_KEY}`;
+      fetchWeather(url);
+    },
+    () => showError("Location access denied. Search a city instead.")
+  );
+}
+
+document.getElementById("cityInput").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") searchCity();
+});
+</script>
+
+</body>
+</html>
